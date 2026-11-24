@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Engins</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 15px; background-color: #f4f6f9; }
+        h1 { color: #333; text-align: center; font-size: 22px; margin: 0; }
+
+        /* En-tête principal avec logo CS en haut à gauche */
+        .app-header { display: flex; align-items: center; justify-content: center; position: relative; min-height: 54px; margin-bottom: 14px; padding: 4px 58px; }
+        .logo-cs-header { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 52px; height: 52px; object-fit: contain; border-radius: 8px; }
+
+        /* Logo CS au centre de l'écran de connexion */
+        .logo-cs-login-box { text-align: center; margin-bottom: 12px; }
+        .logo-cs-login { width: 96px; height: 96px; object-fit: contain; border-radius: 12px; }
+
+        /* Bandeau utilisateur connecté */
+        .session-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 14px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 14px; font-size: 13px; gap: 10px; flex-wrap: wrap; }
+        .session-actions { display: flex; align-items: center; gap: 8px; }
+        .role-pill { padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 11px; margin-left: 6px; }
+        .role-admin { background: #dc3545; color: white; }
+        .role-user { background: #1a73e8; color: white; }
+        .btn-logout { background: #e9ecef; color: #333; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-logo-admin { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+
+        /* Écran de connexion */
+        .login-card { max-width: 380px; margin: 20px auto; background: white; padding: 24px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .login-card h2 { margin-top: 0; text-align: center; color: #1a73e8; font-size: 20px; }
+        .login-field { margin-bottom: 14px; }
+        .login-field label { display: block; font-weight: bold; font-size: 13px; color: #444; margin-bottom: 5px; }
+        .login-field input, .login-field select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .btn-login { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; }
+        .login-error { color: #dc3545; font-size: 13px; font-weight: bold; margin-top: 10px; text-align: center; min-height: 18px; }
+
+        /* Barre actions du haut */
+        .top-action-bar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .btn-synthese { width: 100%; padding: 12px; background-color: #ffc107; color: #333; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-ajout-engin { width: 100%; padding: 11px; background-color: #1a73e8; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-gestion-profils { width: 100%; padding: 11px; background-color: #334155; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .badge { background-color: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 13px; }
+
+        /* Gestion des profils */
+        .profil-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .profil-info { min-width: 0; }
+        .profil-nom { font-weight: bold; font-size: 15px; color: #1e293b; }
+        .profil-meta { font-size: 12px; color: #64748b; margin-top: 3px; }
+        .profil-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-size: 12px; font-weight: bold; color: #d9534f; flex-shrink: 0; }
+        .profil-actions span { cursor: pointer; }
+        .btn-ajout-profil { width: 100%; padding: 11px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; margin-bottom: 14px; }
+
+        /* Liste des engins */
+        .engin-card { background: white; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: background 0.2s; display: flex; gap: 14px; align-items: center; position: relative; }
+        .engin-card:active { background: #e9ecef; }
+        .engin-thumb { width: 78px; height: 58px; object-fit: cover; border-radius: 6px; background: #e9ecef; flex-shrink: 0; }
+        .engin-card-body { flex: 1; min-width: 0; }
+        .engin-card h3 { margin-top: 0; margin-bottom: 6px; color: #1a73e8; }
+        .immat { font-weight: bold; color: #555; margin: 4px 0; }
+        .verif { color: #666; font-style: italic; font-size: 14px; margin: 4px 0; }
+        .engin-actions-admin { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-size: 12px; font-weight: bold; color: #d9534f; flex-shrink: 0; }
+        .engin-actions-admin span { cursor: pointer; }
+
+        /* Bouton Retour */
+        .btn-retour { background-color: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+        
+        /* Fiche détaillée */
+        .fiche-detail { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .fiche-header { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .fiche-photo { width: 130px; height: 92px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; }
+        
+        /* Sous-onglets Mécanique / Matériel */
+        .sub-tabs { display: flex; gap: 10px; margin: 15px 0; }
+        .sub-tab-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; background-color: #e0e4e8; color: #333; font-weight: bold; cursor: pointer; }
+        .sub-tab-btn.active-meca { background-color: #dc3545; color: white; }
+        .sub-tab-btn.active-mat { background-color: #ffc107; color: #333; }
+
+        /* Niveau 2 : Boutons d'emplacement */
+        .emplacements-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #ddd; }
+        .emplacement-btn { padding: 8px 14px; background: #e9ecef; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; color: #555; cursor: pointer; white-space: nowrap; }
+        .emplacement-btn.active { background: #d9534f; color: white; }
+        .onglet-actions-admin { display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: 12px; font-weight: bold; color: #d9534f; margin-bottom: 12px; flex-wrap: wrap; }
+        .onglet-actions-admin span { cursor: pointer; }
+        .btn-fleche-onglet { background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 5px; padding: 3px 8px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-fleche-onglet:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* Photo de catégorie / onglet */
+        .categorie-photo-box { margin-bottom: 14px; text-align: center; }
+        .categorie-photo { max-width: 100%; max-height: 220px; border-radius: 8px; border: 1px solid #e2e8f0; object-fit: contain; background: #f8fafc; }
+
+        /* Carte d'un équipement matériel */
+        .materiel-item-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; padding-right: 95px; }
+        .materiel-title { font-weight: bold; font-size: 15px; color: #222; margin-bottom: 4px; text-transform: capitalize; }
+        .materiel-details { font-size: 13px; color: #555; line-height: 1.5; }
+        .materiel-actions { position: absolute; top: 12px; right: 14px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 12px; font-weight: bold; color: #d9534f; }
+        .materiel-actions span { cursor: pointer; }
+
+        /* Niveau 3 : Tuiles dépliantes */
+        .tuile-depliante { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden; }
+        .tuile-header { padding: 12px 15px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; color: #1e293b; gap: 8px; }
+        .tuile-header:hover { background: #f1f5f9; }
+        .tuile-fleche { margin-right: 8px; display: inline-block; transition: transform 0.2s; }
+        .tuile-fleche.ouverte { transform: rotate(90deg); }
+        .tuile-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .tuile-count { font-size: 12px; color: #64748b; font-weight: normal; }
+        .btn-ajout-tuile { background: #d9534f; color: white; border: none; border-radius: 5px; padding: 4px 9px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-suppr-tuile { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 5px; padding: 4px 8px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .tuile-body { display: none; padding: 12px; background: #ffffff; border-top: 1px solid #e2e8f0; }
+        .tuile-body.ouverte { display: block; }
+
+        .materiel-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 15px 0; font-size: 13px; font-weight: bold; color: #d9534f; }
+        .materiel-toolbar span { cursor: pointer; padding: 5px; }
+        .btn-ajout-materiel { width: 100%; padding: 12px; background-color: #d9534f; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; margin-bottom: 15px; }
+
+        /* Points mécaniques */
+        .liste-points { margin-bottom: 15px; }
+        .point-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; margin-bottom: 8px; }
+        .point-item input[type="checkbox"] { width: 22px; height: 22px; margin-top: 2px; cursor: pointer; accent-color: #28a745; }
+        .point-info { flex: 1; min-width: 0; }
+        .point-libelle { font-weight: bold; color: #333; font-size: 15px; display: block; margin-bottom: 4px; cursor: pointer; }
+        .point-meta { font-size: 12px; color: #666; line-height: 1.4; }
+        .point-actions-admin { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-size: 12px; font-weight: bold; color: #d9534f; flex-shrink: 0; }
+        .point-actions-admin span { cursor: pointer; }
+        .btn-ajout-point-meca { width: 100%; padding: 10px 12px; background-color: #dc3545; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; margin-bottom: 14px; }
+
+        .section-form { margin-top: 10px; }
+        label.titre-remarque { display: block; font-weight: bold; margin-bottom: 6px; color: #444; font-size: 14px; }
+        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: Arial, sans-serif; font-size: 14px; box-sizing: border-box; resize: vertical; margin-bottom: 10px; }
+        .btn-sauver { background-color: #28a745; color: white; border: none; padding: 12px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 15px; }
+        
+        .section-bloc { background: #fff3cd; padding: 12px; border-left: 4px solid #ffc107; margin-top: 15px; border-radius: 4px; }
+        .section-meca { background: #f8d7da; border-left-color: #dc3545; }
+        .aucune-anomalie { text-align: center; color: #28a745; font-weight: bold; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <!-- Inputs fichiers cachés pour photos d'onglet, d'engin et logo CS -->
+    <input type="file" id="input-photo-categorie" accept="image/*" style="display:none;">
+    <input type="file" id="input-photo-engin" accept="image/*" style="display:none;">
+    <input type="file" id="input-logo-cs" accept="image/*" style="display:none;">
+
+    <!-- Écran de connexion -->
+    <div id="vue-connexion" class="login-card">
+        <div class="logo-cs-login-box">
+            <img id="img-logo-cs-login" class="logo-cs-login" src="logo-cs.png" alt="Logo CS" onerror="this.style.display='none'">
+        </div>
+        <h2>Connexion Profil</h2>
+        <div class="login-field">
+            <label for="input-identifiant">Identifiant</label>
+            <input type="text" id="input-identifiant" placeholder="Saisir l'identifiant" autocomplete="username">
+        </div>
+        <div class="login-field">
+            <label for="input-mdp">Mot de passe</label>
+            <input type="password" id="input-mdp" placeholder="Saisir le mot de passe" autocomplete="current-password">
+        </div>
+        <button id="btn-connexion" class="btn-login">Se connecter</button>
+        <div id="login-error" class="login-error"></div>
+    </div>
+
+    <!-- Application principale (masquée tant que non connecté) -->
+    <div id="app-principale" style="display: none;">
+        <div class="app-header">
+            <img id="img-logo-cs-header" class="logo-cs-header" src="logo-cs.png" alt="Logo CS" onerror="this.style.display='none'">
+            <h1>Suivi des Engins</h1>
+        </div>
+
+        <div class="session-bar">
+            <div>
+                Connecté : <strong id="nom-utilisateur-actif">-</strong>
+                <span id="badge-role-actif" class="role-pill">-</span>
+            </div>
+            <div class="session-actions">
+                <button id="btn-changer-logo" class="btn-logo-admin" style="display:none;" onclick="document.getElementById('input-logo-cs').click()">🖼️ Logo CS</button>
+                <button id="btn-deconnexion" class="btn-logout">Déconnexion</button>
+            </div>
+        </div>
+
+        <!-- Vue 1 : Sélection / Liste des engins -->
+        <div id="vue-liste">
+            <div class="top-action-bar">
+                <button class="btn-gestion-profils" id="btn-gestion-profils" style="display:none;" onclick="afficherGestionProfils()">👥 Gestion des profils</button>
+                <button class="btn-synthese" id="btn-ouvrir-synthese">
+                    ⚠️ Synthèse des Anomalies <span id="compteur-anomalies" class="badge" style="display:none;">0</span>
+                </button>
+                <button class="btn-ajout-engin" id="btn-ajouter-engin" style="display:none;" onclick="ajouterEngin()">+ Ajouter un engin</button>
+            </div>
+            <div id="liste-engins">Chargement des données en cours...</div>
+        </div>
+
+        <!-- Vue 2 : Fiche détaillée / Synthèse / Gestion des profils -->
+        <div id="vue-secondaire" style="display: none;">
+            <button class="btn-retour" id="btn-retour">← Retour à la liste</button>
+            <div id="contenu-secondaire"></div>
+        </div>
+    </div>
+
+    <!-- Importation de Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, get, update, push, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdZSz93Sz9FlWRQ791IdPOUYcSWBTkMWU",
+            authDomain: "verificationengins-39c0e.firebaseapp.com",
+            databaseURL: "https://verificationengins-39c0e-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "verificationengins-39c0e",
+            storageBucket: "verificationengins-39c0e.firebasestorage.app",
+            messagingSenderId: "863627298120",
+            appId: "1:863627298120:web:4ec24f7ea26961be901f7d",
+            measurementId: "G-DMK1HJBES4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let tousLesEngins = {};
+        let tousLesPointsMeca = {};
+        let tousLesMateriels = {};
+        let toutesLesCategories = {};
+        let listeProfils = [];
+        let profilActif = null;
+        let ciblePhotoCategorie = null;
+        let brouillonNouvelEngin = null;
+        let ciblePhotoModifEngin = null;
+
+        function estAdmin() {
+            return profilActif && String(profilActif.role).toUpperCase() === "ADMIN";
+        }
+
+        function appliquerLogoCs(uri) {
+            const src = formaterImageSrc(uri) || "logo-cs.png";
+            const imgLogin = document.getElementById("img-logo-cs-login");
+            const imgHeader = document.getElementById("img-logo-cs-header");
+            if (imgLogin) {
+                imgLogin.style.display = "inline-block";
+                imgLogin.src = src;
+            }
+            if (imgHeader) {
+                imgHeader.style.display = "inline-block";
+                imgHeader.src = src;
+            }
+        }
+
+        async function chargerLogoCs() {
+            try {
+                const snap = await get(ref(db, "parametres/logoCs"));
+                if (snap.exists() && snap.val()) {
+                    appliquerLogoCs(snap.val());
+                }
+            } catch (e) {
+                console.error("Erreur chargement logo CS :", e);
+            }
+        }
+
+        document.getElementById("input-logo-cs").addEventListener("change", async (event) => {
+            if (!estAdmin()) return;
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) return;
+
+            try {
+                const base64Str = await fichierVersBase64Png(file, 320);
+                await set(ref(db, "parametres/logoCs"), base64Str);
+                appliquerLogoCs(base64Str);
+                alert("Logo du CS mis à jour !");
+            } catch (err) {
+                console.error("Erreur enregistrement logo CS :", err);
+                alert("Impossible d'enregistrer le logo du CS.");
+            }
+        });
+
+        function fichierVersBase64Png(file, maxWidth = 320) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxWidth) {
+                            h = Math.round((h * maxWidth) / w);
+                            w = maxWidth;
+                        }
+                        const canvas = document.createElement("canvas");
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL("image/png"));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function extraireProfils(obj, chemin = "") {
+            if (!obj || typeof obj !== "object") return;
+            if (obj.motDePasse !== undefined && obj.role !== undefined) {
+                listeProfils.push({
+                    cle: chemin,
+                    id: obj.id || chemin,
+                    nom: obj.nom || obj.id || chemin,
+                    motDePasse: String(obj.motDePasse),
+                    role: String(obj.role).toUpperCase()
+                });
+                return;
+            }
+            for (const k in obj) {
+                if (obj[k] && typeof obj[k] === "object") {
+                    extraireProfils(obj[k], chemin ? `${chemin}/${k}` : k);
+                }
+            }
+        }
+
+        async function chargerProfils() {
+            const btnConnexion = document.getElementById("btn-connexion");
+            const errEl = document.getElementById("login-error");
+            btnConnexion.disabled = true;
+            try {
+                const snap = await get(ref(db, "profils"));
+                listeProfils = [];
+                if (snap.exists()) {
+                    extraireProfils(snap.val());
+                }
+                if (listeProfils.length === 0) {
+                    errEl.textContent = "Aucun profil configuré dans Firebase.";
+                    return;
+                }
+                errEl.textContent = "";
+            } catch (e) {
+                console.error("Erreur chargement profils :", e);
+                errEl.textContent = "Impossible de charger les profils.";
+            } finally {
+                btnConnexion.disabled = false;
+            }
+        }
+
+        function tenterConnexion() {
+            const identifiantSaisi = document.getElementById("input-identifiant").value.trim().toLowerCase();
+            const mdp = document.getElementById("input-mdp").value;
+            const errEl = document.getElementById("login-error");
+
+            if (!identifiantSaisi) {
+                errEl.textContent = "Saisis un identifiant.";
+                return;
+            }
+            if (listeProfils.length === 0) {
+                errEl.textContent = "Aucun profil disponible pour le moment.";
+                return;
+            }
+
+            const candidat = listeProfils.find((p) =>
+                String(p.nom || "").trim().toLowerCase() === identifiantSaisi ||
+                String(p.id || "").trim().toLowerCase() === identifiantSaisi
+            );
+
+            if (!candidat || mdp !== candidat.motDePasse) {
+                errEl.textContent = "Identifiant ou mot de passe incorrect.";
+                return;
+            }
+
+            profilActif = candidat;
+            errEl.textContent = "";
+            document.getElementById("input-mdp").value = "";
+            document.getElementById("vue-connexion").style.display = "none";
+            document.getElementById("app-principale").style.display = "block";
+
+            document.getElementById("nom-utilisateur-actif").textContent = profilActif.nom;
+            const badgeRole = document.getElementById("badge-role-actif");
+            badgeRole.textContent = profilActif.role;
+            badgeRole.className = `role-pill ${estAdmin() ? "role-admin" : "role-user"}`;
+
+            const adminDisplay = estAdmin() ? "block" : "none";
+            document.getElementById("btn-ajouter-engin").style.display = adminDisplay;
+            document.getElementById("btn-gestion-profils").style.display = adminDisplay;
+            document.getElementById("btn-changer-logo").style.display = estAdmin() ? "inline-block" : "none";
+
+            chargerDonnees();
+        }
+
+        function deconnecter() {
+            profilActif = null;
+            brouillonNouvelEngin = null;
+            ciblePhotoModifEngin = null;
+            document.getElementById("input-identifiant").value = "";
+            document.getElementById("input-mdp").value = "";
+            document.getElementById("btn-ajouter-engin").style.display = "none";
+            document.getElementById("btn-gestion-profils").style.display = "none";
+            document.getElementById("btn-changer-logo").style.display = "none";
+            document.getElementById("app-principale").style.display = "none";
+            document.getElementById("vue-secondaire").style.display = "none";
+            document.getElementById("vue-liste").style.display = "block";
+            document.getElementById("vue-connexion").style.display = "block";
+        }
+
+        // Gestion des profils (ADMIN uniquement)
+        window.afficherGestionProfils = async function() {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            document.getElementById("vue-liste").style.display = "none";
+            document.getElementById("vue-secondaire").style.display = "block";
+
+            await chargerProfils();
+
+            let cartesHtml = "";
+            if (listeProfils.length === 0) {
+                cartesHtml = `<p style="color:#666; font-style:italic;">Aucun profil enregistré.</p>`;
+            } else {
+                cartesHtml = listeProfils.map((p, idx) => {
+                    const roleClass = p.role === "ADMIN" ? "role-admin" : "role-user";
+                    const estMoi = profilActif && p.cle === profilActif.cle;
+                    return `
+                        <div class="profil-card">
+                            <div class="profil-info">
+                                <div class="profil-nom">
+                                    ${p.nom}
+                                    <span class="role-pill ${roleClass}">${p.role}</span>
+                                </div>
+                                <div class="profil-meta">Identifiant : ${p.id} ${estMoi ? "• (Session active)" : ""}</div>
+                            </div>
+                            <div class="profil-actions">
+                                <span onclick="modifierProfil(${idx})">Modifier</span>
+                                <span onclick="supprimerProfil(${idx})">Suppr.</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            document.getElementById("contenu-secondaire").innerHTML = `
+                <div class="fiche-detail">
+                    <h2 style="margin-top:0; color:#1e293b;">Gestion des profils</h2>
+                    <button type="button" class="btn-ajout-profil" onclick="ajouterProfil()">+ Ajouter un profil</button>
+                    ${cartesHtml}
+                </div>
+            `;
+        };
+
+        window.ajouterProfil = async function() {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const nomSaisi = prompt("Identifiant / Nom du profil :");
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim();
+            if (!nom) {
+                alert("L'identifiant est obligatoire.");
+                return;
+            }
+
+            const mdpSaisi = prompt("Mot de passe :");
+            if (mdpSaisi === null) return;
+            const motDePasse = mdpSaisi.trim();
+            if (!motDePasse) {
+                alert("Le mot de passe est obligatoire.");
+                return;
+            }
+
+            const roleSaisi = prompt("Rôle (ADMIN ou USER) :", "USER");
+            if (roleSaisi === null) return;
+            const role = roleSaisi.trim().toUpperCase() === "ADMIN" ? "ADMIN" : "USER";
+
+            try {
+                const listeRef = ref(db, "profils");
+                const nouvelleRef = push(listeRef);
+                await set(nouvelleRef, {
+                    id: nouvelleRef.key,
+                    nom,
+                    motDePasse,
+                    role
+                });
+                await afficherGestionProfils();
+                alert(`Profil "${nom}" créé (${role}).`);
+            } catch (e) {
+                console.error("Erreur création profil :", e);
+                alert("Erreur lors de la création du profil.");
+            }
+        };
+
+        window.modifierProfil = async function(index) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const profil = listeProfils[index];
+            if (!profil) return;
+
+            const nomSaisi = prompt("Nouvel identifiant / nom :", profil.nom);
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim();
+            if (!nom) {
+                alert("L'identifiant est obligatoire.");
+                return;
+            }
+
+            const mdpSaisi = prompt("Nouveau mot de passe :", profil.motDePasse);
+            if (mdpSaisi === null) return;
+            const motDePasse = mdpSaisi.trim();
+            if (!motDePasse) {
+                alert("Le mot de passe est obligatoire.");
+                return;
+            }
+
+            const roleSaisi = prompt("Rôle (ADMIN ou USER) :", profil.role);
+            if (roleSaisi === null) return;
+            const role = roleSaisi.trim().toUpperCase() === "ADMIN" ? "ADMIN" : "USER";
+
+            try {
+                await update(ref(db, `profils/${profil.cle}`), { nom, motDePasse, role });
+                if (profilActif && profilActif.cle === profil.cle) {
+                    profilActif.nom = nom;
+                    profilActif.motDePasse = motDePasse;
+                    profilActif.role = role;
+                    document.getElementById("nom-utilisateur-actif").textContent = nom;
+                    const badgeRole = document.getElementById("badge-role-actif");
+                    badgeRole.textContent = role;
+                    badgeRole.className = `role-pill ${estAdmin() ? "role-admin" : "role-user"}`;
+                }
+                await afficherGestionProfils();
+                alert(`Profil "${nom}" mis à jour.`);
+            } catch (e) {
+                console.error("Erreur modification profil :", e);
+                alert("Erreur lors de la modification du profil.");
+            }
+        };
+
+        window.supprimerProfil = async function(index) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const profil = listeProfils[index];
+            if (!profil) return;
+
+            if (profilActif && profil.cle === profilActif.cle) {
+                alert("Tu ne peux pas supprimer le profil actuellement connecté.");
+                return;
+            }
+
+            if (!confirm(`Supprimer le profil "${profil.nom}" (${profil.role}) ?`)) return;
+
+            try {
+                await remove(ref(db, `profils/${profil.cle}`));
+                await afficherGestionProfils();
+                alert(`Profil "${profil.nom}" supprimé.`);
+            } catch (e) {
+                console.error("Erreur suppression profil :", e);
+                alert("Erreur lors de la suppression du profil.");
+            }
+        };
+
+        document.getElementById("btn-connexion").addEventListener("click", tenterConnexion);
+        document.getElementById("input-identifiant").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") tenterConnexion();
+        });
+        document.getElementById("input-mdp").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") tenterConnexion();
+        });
+        document.getElementById("btn-deconnexion").addEventListener("click", deconnecter);
+
+        function formaterImageSrc(uri) {
+            if (!uri || typeof uri !== "string") return "";
+            const propre = uri.trim();
+            if (!propre) return "";
+            if (propre.startsWith("data:image") || propre.startsWith("http://") || propre.startsWith("https://")) {
+                return propre;
+            }
+            return `data:image/jpeg;base64,${propre}`;
+        }
+
+        function fichierVersBase64Compresse(file, maxWidth = 800, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxWidth) {
+                            h = Math.round((h * maxWidth) / w);
+                            w = maxWidth;
+                        }
+                        const canvas = document.createElement("canvas");
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+                        resolve(dataUrl.split(",")[1] || "");
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function enregistrerNouvelEngin(brouillon, imageUri) {
+            const listeRef = ref(db, "engins");
+            const nouvelleRef = push(listeRef);
+            const nouvelEngin = {
+                id: nouvelleRef.key,
+                nom: brouillon.nom,
+                immatriculation: brouillon.immatriculation,
+                derniereVerif: "",
+                remarqueMecanique: "",
+                remarqueMateriel: "",
+                imageUri: imageUri || ""
+            };
+            await set(nouvelleRef, nouvelEngin);
+            tousLesEngins[nouvelleRef.key] = nouvelEngin;
+            await chargerDonnees();
+            alert(`Engin "${brouillon.nom}" créé !`);
+        }
+
+        async function enregistrerModifEngin(enginId, nom, immatriculation, imageUri) {
+            const enginExistant = tousLesEngins[enginId] || {};
+            const maj = {
+                nom,
+                immatriculation,
+                imageUri: imageUri !== undefined ? imageUri : (enginExistant.imageUri || "")
+            };
+            await update(ref(db, `engins/${enginId}`), maj);
+            tousLesEngins[enginId] = { ...enginExistant, ...maj };
+            await chargerDonnees();
+            alert(`Engin "${nom}" mis à jour !`);
+        }
+
+        document.getElementById("input-photo-engin").addEventListener("change", async (event) => {
+            if (!estAdmin()) return;
+            const file = event.target.files?.[0];
+            event.target.value = "";
+
+            if (brouillonNouvelEngin) {
+                const brouillon = brouillonNouvelEngin;
+                brouillonNouvelEngin = null;
+                try {
+                    const base64Str = file ? await fichierVersBase64Compresse(file) : "";
+                    await enregistrerNouvelEngin(brouillon, base64Str);
+                } catch (err) {
+                    console.error("Erreur création engin avec photo :", err);
+                    alert("Impossible d'enregistrer le nouvel engin.");
+                }
+                return;
+            }
+
+            if (ciblePhotoModifEngin) {
+                const cible = ciblePhotoModifEngin;
+                ciblePhotoModifEngin = null;
+                try {
+                    const base64Str = file ? await fichierVersBase64Compresse(file) : cible.imageUriActuelle;
+                    await enregistrerModifEngin(cible.enginId, cible.nom, cible.immatriculation, base64Str);
+                } catch (err) {
+                    console.error("Erreur modification photo engin :", err);
+                    alert("Impossible de mettre à jour l'engin.");
+                }
+            }
+        });
+
+        window.ajouterEngin = async function() {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const nomSaisi = prompt("Nom du nouvel engin :");
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim();
+            if (!nom) {
+                alert("Le nom de l'engin est obligatoire.");
+                return;
+            }
+            const immatSaisie = prompt("Immatriculation :", "");
+            if (immatSaisie === null) return;
+            const immatriculation = immatSaisie.trim();
+
+            const choisirPhoto = confirm("Voulez-vous ajouter une photo pour cet engin ?");
+            if (choisirPhoto) {
+                brouillonNouvelEngin = { nom, immatriculation };
+                document.getElementById("input-photo-engin").click();
+            } else {
+                try {
+                    await enregistrerNouvelEngin({ nom, immatriculation }, "");
+                } catch (err) {
+                    console.error("Erreur création engin :", err);
+                    alert("Erreur lors de la création de l'engin.");
+                }
+            }
+        };
+
+        window.modifierEngin = async function(enginId) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const engin = tousLesEngins[enginId];
+            if (!engin) return;
+
+            const nomSaisi = prompt("Nouveau nom de l'engin :", engin.nom || "");
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim();
+            if (!nom) {
+                alert("Le nom de l'engin est obligatoire.");
+                return;
+            }
+            const immatSaisie = prompt("Nouvelle immatriculation :", engin.immatriculation || "");
+            if (immatSaisie === null) return;
+            const immatriculation = immatSaisie.trim();
+
+            const changerPhoto = confirm("Voulez-vous modifier la photo de cet engin ?");
+            if (changerPhoto) {
+                ciblePhotoModifEngin = {
+                    enginId,
+                    nom,
+                    immatriculation,
+                    imageUriActuelle: engin.imageUri || ""
+                };
+                document.getElementById("input-photo-engin").click();
+            } else {
+                try {
+                    await enregistrerModifEngin(enginId, nom, immatriculation, engin.imageUri || "");
+                } catch (err) {
+                    console.error("Erreur modification engin :", err);
+                    alert("Erreur lors de la modification de l'engin.");
+                }
+            }
+        };
+
+        window.supprimerEngin = async function(enginId) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const engin = tousLesEngins[enginId];
+            if (!engin) return;
+
+            const nomEngin = engin.nom || "cet engin";
+            if (!confirm(`Supprimer définitivement l'engin "${nomEngin}" ainsi que ses points mécaniques, catégories et matériels ?`)) return;
+
+            try {
+                await Promise.all([
+                    remove(ref(db, `engins/${enginId}`)),
+                    remove(ref(db, `points_meca/${enginId}`)),
+                    remove(ref(db, `materiels/${enginId}`)),
+                    remove(ref(db, `categories/${enginId}`))
+                ]);
+
+                delete tousLesEngins[enginId];
+                delete tousLesPointsMeca[enginId];
+                delete tousLesMateriels[enginId];
+                delete toutesLesCategories[enginId];
+
+                await chargerDonnees();
+                alert(`Engin "${nomEngin}" supprimé.`);
+            } catch (err) {
+                console.error("Erreur suppression engin :", err);
+                alert("Erreur lors de la suppression de l'engin.");
+            }
+        };
+
+        document.getElementById("input-photo-categorie").addEventListener("change", async (event) => {
+            if (!estAdmin()) return;
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file || !ciblePhotoCategorie) return;
+
+            const { enginId, catKey } = ciblePhotoCategorie;
+            try {
+                const base64Str = await fichierVersBase64Compresse(file);
+                await update(ref(db, `categories/${enginId}/${catKey}`), { imageUri: base64Str });
+                if (!toutesLesCategories[enginId]) toutesLesCategories[enginId] = {};
+                if (!toutesLesCategories[enginId][catKey]) toutesLesCategories[enginId][catKey] = {};
+                toutesLesCategories[enginId][catKey].imageUri = base64Str;
+                afficherOngletMateriel(enginId, catKey);
+                alert("Photo enregistrée sur l'onglet !");
+            } catch (err) {
+                console.error("Erreur photo catégorie :", err);
+                alert("Impossible d'enregistrer la photo.");
+            }
+        });
+
+        window.declencherAjoutPhotoCategorie = function(enginId, catKey) {
+            if (!estAdmin()) return;
+            ciblePhotoCategorie = { enginId, catKey };
+            document.getElementById("input-photo-categorie").click();
+        };
+
+        window.deplacerOnglet = async function(enginId, catKey, direction) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const catsEngin = toutesLesCategories[enginId];
+            if (!catsEngin) return;
+
+            let toutesCats = [];
+            for (let key in catsEngin) {
+                if (catsEngin[key]) {
+                    toutesCats.push({
+                        key: key,
+                        id: catsEngin[key].id || key,
+                        ...catsEngin[key]
+                    });
+                }
+            }
+            toutesCats.sort((a, b) => (Number(a.ordre) || 0) - (Number(b.ordre) || 0));
+
+            let niveau2List = toutesCats.filter(c => !c.parentId || c.parentId.trim() === "");
+            if (niveau2List.length === 0) niveau2List = toutesCats;
+
+            const indexActuel = niveau2List.findIndex(c => c.key === catKey || c.id === catKey);
+            if (indexActuel === -1) return;
+
+            const indexCible = indexActuel + direction;
+            if (indexCible < 0 || indexCible >= niveau2List.length) return;
+
+            const temp = niveau2List[indexActuel];
+            niveau2List[indexActuel] = niveau2List[indexCible];
+            niveau2List[indexCible] = temp;
+
+            const promesses = [];
+            niveau2List.forEach((onglet, nouvelOrdre) => {
+                toutesLesCategories[enginId][onglet.key].ordre = nouvelOrdre;
+                promesses.push(update(ref(db, `categories/${enginId}/${onglet.key}`), { ordre: nouvelOrdre }));
+            });
+
+            try {
+                await Promise.all(promesses);
+                afficherOngletMateriel(enginId, catKey);
+            } catch (e) {
+                console.error("Erreur déplacement onglet :", e);
+                alert("Erreur lors du déplacement de l'onglet dans Firebase.");
+            }
+        };
+
+        window.ajouterPointMeca = async function(enginId) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const libelleSaisi = prompt("Libellé du nouveau point de contrôle mécanique :");
+            if (libelleSaisi === null) return;
+            const libelle = libelleSaisi.trim();
+            if (!libelle) {
+                alert("Le libellé ne peut pas être vide.");
+                return;
+            }
+
+            try {
+                const listeRef = ref(db, `points_meca/${enginId}`);
+                const nouvelleRef = push(listeRef);
+                const nouveauPoint = {
+                    id: nouvelleRef.key,
+                    libelle,
+                    estValide: false,
+                    dateDerniereCoche: "",
+                    dateDerniereValidation: ""
+                };
+                await set(nouvelleRef, nouveauPoint);
+                if (!tousLesPointsMeca[enginId]) tousLesPointsMeca[enginId] = {};
+                tousLesPointsMeca[enginId][nouvelleRef.key] = nouveauPoint;
+
+                const blocPoints = document.getElementById("bloc-points-meca");
+                if (blocPoints) {
+                    blocPoints.innerHTML = genererHtmlPointsMeca(enginId);
+                }
+                alert("Point mécanique ajouté !");
+            } catch (e) {
+                console.error("Erreur création point méca :", e);
+                alert("Erreur lors de l'ajout du point mécanique.");
+            }
+        };
+
+        window.modifierPointMeca = async function(enginId, pointId) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const pt = tousLesPointsMeca[enginId]?.[pointId];
+            if (!pt) return;
+
+            const nouveauLibelleSaisi = prompt("Nouveau libellé du point mécanique :", pt.libelle || "");
+            if (nouveauLibelleSaisi === null) return;
+            const libelle = nouveauLibelleSaisi.trim();
+            if (!libelle) {
+                alert("Le libellé ne peut pas être vide.");
+                return;
+            }
+
+            try {
+                await update(ref(db, `points_meca/${enginId}/${pointId}`), { libelle });
+                pt.libelle = libelle;
+
+                const blocPoints = document.getElementById("bloc-points-meca");
+                if (blocPoints) {
+                    blocPoints.innerHTML = genererHtmlPointsMeca(enginId);
+                }
+                alert("Point mécanique modifié !");
+            } catch (e) {
+                console.error("Erreur modification point méca :", e);
+                alert("Erreur lors de la modification du point mécanique.");
+            }
+        };
+
+        window.supprimerPointMeca = async function(enginId, pointId) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            const pt = tousLesPointsMeca[enginId]?.[pointId];
+            if (!pt) return;
+
+            if (!confirm(`Supprimer le point mécanique "${pt.libelle || 'Point de contrôle'}" ?`)) return;
+
+            try {
+                await remove(ref(db, `points_meca/${enginId}/${pointId}`));
+                delete tousLesPointsMeca[enginId][pointId];
+
+                const blocPoints = document.getElementById("bloc-points-meca");
+                if (blocPoints) {
+                    blocPoints.innerHTML = genererHtmlPointsMeca(enginId);
+                }
+                alert("Point mécanique supprimé !");
+            } catch (e) {
+                console.error("Erreur suppression point méca :", e);
+                alert("Erreur lors de la suppression du point mécanique.");
+            }
+        };
+
+        window.ajouterCategorie = async function(enginId, parentId, catActiveKey) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+
+            const estPochette = Boolean(parentId);
+            const libelleType = estPochette ? "la pochette dépliable" : "le nouvel onglet";
+            const nomSaisi = prompt(`Nom de ${libelleType} :`);
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim();
+            if (!nom) {
+                alert("Le nom ne peut pas être vide.");
+                return;
+            }
+
+            const catsEngin = toutesLesCategories[enginId] || {};
+            const ordresExistants = Object.values(catsEngin)
+                .filter(Boolean)
+                .map((c) => Number(c.ordre) || 0);
+            const prochainOrdre = ordresExistants.length > 0 ? Math.max(...ordresExistants) + 1 : 0;
+
+            try {
+                const listeRef = ref(db, `categories/${enginId}`);
+                const nouvelleRef = push(listeRef);
+                const nouvelleCat = {
+                    id: nouvelleRef.key,
+                    nom,
+                    imageUri: "",
+                    ordre: prochainOrdre,
+                    parentId: estPochette ? parentId : ""
+                };
+
+                await set(nouvelleRef, nouvelleCat);
+
+                if (!toutesLesCategories[enginId]) toutesLesCategories[enginId] = {};
+                toutesLesCategories[enginId][nouvelleRef.key] = nouvelleCat;
+
+                const ongletCible = estPochette ? catActiveKey : nouvelleRef.key;
+                afficherOngletMateriel(enginId, ongletCible);
+                alert(estPochette ? `Pochette "${nom}" ajoutée !` : `Onglet "${nom}" ajouté !`);
+            } catch (e) {
+                console.error("Erreur création catégorie :", e);
+                alert("Erreur lors de l'enregistrement dans Firebase.");
+            }
+        };
+
+        window.supprimerCategorie = async function(enginId, catKey, estOngletNiveau2) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+
+            const catsEngin = toutesLesCategories[enginId] || {};
+            const catCible = catsEngin[catKey];
+            if (!catCible) return;
+
+            const nomCat = catCible.nom || "cette catégorie";
+            const messageConfirm = estOngletNiveau2
+                ? `Supprimer l'onglet "${nomCat}", ses éventuelles pochettes et son matériel ?`
+                : `Supprimer la pochette dépliante "${nomCat}" et son matériel ?`;
+            if (!confirm(messageConfirm)) return;
+
+            const idsASupprimer = new Set([catKey, catCible.id].filter(Boolean));
+
+            if (estOngletNiveau2) {
+                for (const [k, c] of Object.entries(catsEngin)) {
+                    if (!c) continue;
+                    const parentMatch = c.parentId && (c.parentId === catKey || c.parentId === catCible.id);
+                    if (parentMatch) {
+                        idsASupprimer.add(k);
+                        if (c.id) idsASupprimer.add(c.id);
+                    }
+                }
+            }
+
+            try {
+                const promesses = [];
+                for (const idCat of idsASupprimer) {
+                    if (catsEngin[idCat]) {
+                        promesses.push(remove(ref(db, `categories/${enginId}/${idCat}`)));
+                    }
+                }
+
+                const matsEngin = tousLesMateriels[enginId] || {};
+                const clesMaterielsASupprimer = [];
+                for (const [matKey, item] of Object.entries(matsEngin)) {
+                    if (item && idsASupprimer.has(item.categorieId)) {
+                        clesMaterielsASupprimer.push(matKey);
+                        promesses.push(remove(ref(db, `materiels/${enginId}/${matKey}`)));
+                    }
+                }
+
+                await Promise.all(promesses);
+
+                for (const idCat of idsASupprimer) {
+                    delete toutesLesCategories[enginId][idCat];
+                }
+                for (const matKey of clesMaterielsASupprimer) {
+                    delete tousLesMateriels[enginId][matKey];
+                }
+
+                afficherOngletMateriel(enginId, null);
+                alert(`"${nomCat}" a bien été supprimé.`);
+            } catch (e) {
+                console.error("Erreur suppression catégorie :", e);
+                alert("Erreur lors de la suppression dans Firebase.");
+            }
+        };
+
+        window.supprimerMateriel = async function(enginId, matKey, catOngletActiveKey) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+
+            const item = tousLesMateriels[enginId]?.[matKey];
+            if (!item) return;
+
+            if (!confirm(`Supprimer le matériel "${item.nom || 'Matériel'}" ?`)) return;
+
+            try {
+                await remove(ref(db, `materiels/${enginId}/${matKey}`));
+                delete tousLesMateriels[enginId][matKey];
+                afficherOngletMateriel(enginId, catOngletActiveKey);
+                alert("Matériel supprimé.");
+            } catch (e) {
+                console.error("Erreur suppression matériel :", e);
+                alert("Erreur lors de la suppression du matériel.");
+            }
+        };
+
+        window.ajouterMateriel = async function(enginId, categorieIdCible, nomCible, catOngletActiveKey) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+
+            const nomSaisi = prompt(`Nom du matériel à ajouter dans "${nomCible}" :`);
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim();
+            if (!nom) {
+                alert("Le nom du matériel est obligatoire.");
+                return;
+            }
+
+            const qteSaisie = prompt("Quantité requise :", "1");
+            if (qteSaisie === null) return;
+            const quantite = Number(qteSaisie) || 1;
+
+            const peremptionSaisie = prompt("Date de péremption (ou N/A) :", "N/A");
+            if (peremptionSaisie === null) return;
+            const peremption = peremptionSaisie.trim() || "N/A";
+
+            const refSaisie = prompt("Référence (ou N/A) :", "N/A");
+            if (refSaisie === null) return;
+            const reference = refSaisie.trim() || "N/A";
+
+            try {
+                const listeRef = ref(db, `materiels/${enginId}`);
+                const nouvelleRef = push(listeRef);
+                const nouveauMateriel = {
+                    id: nouvelleRef.key,
+                    nom,
+                    quantite,
+                    peremption,
+                    reference,
+                    categorieId: categorieIdCible,
+                    estValide: false,
+                    dateDerniereValidation: ""
+                };
+
+                await set(nouvelleRef, nouveauMateriel);
+
+                if (!tousLesMateriels[enginId]) tousLesMateriels[enginId] = {};
+                tousLesMateriels[enginId][nouvelleRef.key] = nouveauMateriel;
+
+                afficherOngletMateriel(enginId, catOngletActiveKey);
+                alert(`"${nom}" ajouté dans "${nomCible}" !`);
+            } catch (e) {
+                console.error("Erreur ajout matériel :", e);
+                alert("Erreur lors de l'ajout du matériel dans Firebase.");
+            }
+        };
+
+        window.modifierDatePeremption = async function(enginId, matId, catKey) {
+            const item = tousLesMateriels[enginId]?.[matId];
+            if (!item) return;
+            const nouvelleDate = prompt(`Nouvelle date de péremption pour "${item.nom || 'Matériel'}" :`, item.peremption || "N/A");
+            if (nouvelleDate === null) return;
+            try {
+                await update(ref(db, `materiels/${enginId}/${matId}`), { peremption: nouvelleDate.trim() || "N/A" });
+                item.peremption = nouvelleDate.trim() || "N/A";
+                afficherOngletMateriel(enginId, catKey);
+                alert("Date de péremption mise à jour !");
+            } catch (e) {
+                console.error("Erreur mise à jour date :", e);
+                alert("Erreur lors de la mise à jour de la date.");
+            }
+        };
+
+        function obtenirDateActuelle() {
+            const maintenant = new Date();
+            const jour = String(maintenant.getDate()).padStart(2, '0');
+            const mois = String(maintenant.getMonth() + 1).padStart(2, '0');
+            const annee = maintenant.getFullYear();
+            const heures = String(maintenant.getHours()).padStart(2, '0');
+            const minutes = String(maintenant.getMinutes()).padStart(2, '0');
+            return `${jour}/${mois}/${annee} ${heures}:${minutes}`;
+        }
+
+        async function chargerDonnees() {
+            const conteneur = document.getElementById("liste-engins");
+            const badge = document.getElementById("compteur-anomalies");
+
+            try {
+                const [snapEngins, snapPoints, snapMateriels, snapCategories] = await Promise.all([
+                    get(ref(db, 'engins')),
+                    get(ref(db, 'points_meca')),
+                    get(ref(db, 'materiels')),
+                    get(ref(db, 'categories'))
+                ]);
+
+                if (snapPoints.exists()) tousLesPointsMeca = snapPoints.val();
+                if (snapMateriels.exists()) tousLesMateriels = snapMateriels.val();
+                if (snapCategories.exists()) toutesLesCategories = snapCategories.val();
+
+                if (snapEngins.exists()) {
+                    tousLesEngins = snapEngins.val();
+                    conteneur.innerHTML = "";
+                    let nbAnomalies = 0;
+
+                    for (let id in tousLesEngins) {
+                        let engin = tousLesEngins[id];
+                        if (!engin) continue;
+
+                        let aMat = engin.remarqueMateriel && engin.remarqueMateriel.trim() !== "";
+                        let aMeca = engin.remarqueMecanique && engin.remarqueMecanique.trim() !== "";
+                        if (aMat || aMeca) nbAnomalies++;
+
+                        const imgSrc = formaterImageSrc(engin.imageUri);
+                        const imgHtml = imgSrc
+                            ? `<img class="engin-thumb" src="${imgSrc}" alt="${engin.nom || 'Engin'}" onerror="this.style.display='none'">`
+                            : '';
+
+                        const actionsAdminEngin = estAdmin()
+                            ? `
+                                <div class="engin-actions-admin">
+                                    <span onclick="event.stopPropagation(); modifierEngin('${id}')">Modifier</span>
+                                    <span onclick="event.stopPropagation(); supprimerEngin('${id}')">Suppr.</span>
+                                </div>
+                            `
+                            : '';
+
+                        let carte = document.createElement("div");
+                        carte.className = "engin-card";
+                        carte.innerHTML = `
+                            ${imgHtml}
+                            <div class="engin-card-body">
+                                <h3>${engin.nom || 'Engin'}</h3>
+                                <p class="immat">Immatriculation : ${engin.immatriculation || 'Non renseignée'}</p>
+                                <p class="verif">Dernière vérif : ${engin.derniereVerif || 'Aucune'}</p>
+                            </div>
+                            ${actionsAdminEngin}
+                        `;
+                        
+                        carte.addEventListener("click", () => afficherDetailEngin(id));
+                        conteneur.appendChild(carte);
+                    }
+
+                    if (nbAnomalies > 0) {
+                        badge.textContent = nbAnomalies;
+                        badge.style.display = "inline-block";
+                    } else {
+                        badge.style.display = "none";
+                    }
+
+                } else {
+                    tousLesEngins = {};
+                    badge.style.display = "none";
+                    conteneur.innerHTML = "<p>Aucun engin trouvé dans la base de données.</p>";
+                }
+            } catch (error) {
+                console.error("Erreur :", error);
+                conteneur.innerHTML = "<p>Erreur lors de la récupération des données.</p>";
+            }
+        }
+
+        function genererHtmlPointsMeca(enginId) {
+            const pointsEngin = tousLesPointsMeca[enginId];
+            const boutonAjoutHtml = estAdmin()
+                ? `<button type="button" class="btn-ajout-point-meca" onclick="ajouterPointMeca('${enginId}')">+ Ajouter un point mécanique</button>`
+                : '';
+
+            let listeHtml = '';
+            if (!pointsEngin) {
+                listeHtml = "<p style='color:#666; font-style:italic;'>Aucun point de contrôle mécanique configuré pour cet engin.</p>";
+            } else {
+                listeHtml = '<div class="liste-points">';
+                for (let pointId in pointsEngin) {
+                    const pt = pointsEngin[pointId];
+                    if (!pt) continue;
+
+                    const estCoche = pt.estValide ? 'checked' : '';
+                    const infoCoche = pt.dateDerniereCoche ? `Dernière coche : ${pt.dateDerniereCoche}` : 'Jamais coché';
+                    const infoValid = pt.dateDerniereValidation ? `<br>Dernière validation : ${pt.dateDerniereValidation}` : '';
+                    const actionsAdmin = estAdmin()
+                        ? `
+                            <div class="point-actions-admin">
+                                <span onclick="modifierPointMeca('${enginId}', '${pointId}')">Modifier</span>
+                                <span onclick="supprimerPointMeca('${enginId}', '${pointId}')">Suppr.</span>
+                            </div>
+                        `
+                        : '';
+
+                    listeHtml += `
+                        <div class="point-item">
+                            <input type="checkbox" id="chk-${enginId}-${pointId}" ${estCoche} onchange="basculerPointMeca('${enginId}', '${pointId}', this.checked)">
+                            <div class="point-info">
+                                <label class="point-libelle" for="chk-${enginId}-${pointId}">${pt.libelle || 'Point de contrôle'}</label>
+                                <div class="point-meta" id="meta-${enginId}-${pointId}">
+                                    ${infoCoche}${infoValid}
+                                </div>
+                            </div>
+                            ${actionsAdmin}
+                        </div>
+                    `;
+                }
+                listeHtml += '</div>';
+            }
+
+            return `${boutonAjoutHtml}${listeHtml}`;
+        }
+
+        window.basculerPointMeca = async function(enginId, pointId, estCoche) {
+            const dateStr = obtenirDateActuelle();
+            const pt = tousLesPointsMeca[enginId][pointId];
+            const auteur = profilActif ? profilActif.nom : "Web";
+            const misesAJour = { estValide: estCoche, dateDerniereCoche: dateStr };
+            if (estCoche) misesAJour.dateDerniereValidation = `${dateStr} par ${auteur}`;
+
+            try {
+                await update(ref(db, `points_meca/${enginId}/${pointId}`), misesAJour);
+                pt.estValide = estCoche;
+                pt.dateDerniereCoche = dateStr;
+                if (estCoche) pt.dateDerniereValidation = misesAJour.dateDerniereValidation;
+
+                const metaDiv = document.getElementById(`meta-${enginId}-${pointId}`);
+                if (metaDiv) {
+                    const infoValid = pt.dateDerniereValidation ? `<br>Dernière validation : ${pt.dateDerniereValidation}` : '';
+                    metaDiv.innerHTML = `Dernière coche : ${pt.dateDerniereCoche}${infoValid}`;
+                }
+            } catch (error) {
+                console.error("Erreur sauvegarde point méca :", error);
+            }
+        };
+
+        function genererCarteMateriel(enginId, matKey, item, catKey) {
+            const adminActions = estAdmin()
+                ? `<span onclick="alerteAction('Modifier matériel')">Modifier</span><span onclick="supprimerMateriel('${enginId}', '${matKey}', '${catKey}')">Suppr.</span>`
+                : '';
+
+            return `
+                <div class="materiel-item-card">
+                    <div class="materiel-title">${item.nom || 'Matériel'}</div>
+                    <div class="materiel-details">
+                        Quantité requise : ${item.quantite !== undefined ? item.quantite : 'N/A'}<br>
+                        Date péremption : ${item.peremption || 'N/A'}<br>
+                        Référence : ${item.reference || 'N/A'}
+                    </div>
+                    <div class="materiel-actions">
+                        <span onclick="modifierDatePeremption('${enginId}', '${matKey}', '${catKey}')">Modif. date</span>
+                        ${adminActions}
+                    </div>
+                </div>
+            `;
+        }
+
+        window.afficherOngletMateriel = function(enginId, catNiveau2KeyActive = null) {
+            const catsEngin = toutesLesCategories[enginId];
+            const materielsEngin = tousLesMateriels[enginId];
+
+            const htmlPremierOngletAdmin = estAdmin()
+                ? `<div style="text-align:center; padding:10px 0;"><button type="button" class="btn-ajout-materiel" onclick="ajouterCategorie('${enginId}', '', '')">+ Créer le premier onglet</button></div>`
+                : '';
+
+            if (!catsEngin) {
+                document.getElementById("contenu-onglet-materiel").innerHTML = `
+                    <p style="text-align:center; color:#666; font-style:italic; padding:15px 15px 5px 15px;">Aucune catégorie configurée pour cet engin.</p>
+                    ${htmlPremierOngletAdmin}
+                `;
+                return;
+            }
+
+            let toutesCats = [];
+            for (let key in catsEngin) {
+                if (catsEngin[key]) {
+                    toutesCats.push({
+                        key: key,
+                        id: catsEngin[key].id || key,
+                        ...catsEngin[key]
+                    });
+                }
+            }
+            toutesCats.sort((a, b) => (Number(a.ordre) || 0) - (Number(b.ordre) || 0));
+
+            let niveau2List = toutesCats.filter(c => !c.parentId || c.parentId.trim() === "");
+            if (niveau2List.length === 0) niveau2List = toutesCats;
+
+            if (niveau2List.length === 0) {
+                document.getElementById("contenu-onglet-materiel").innerHTML = `
+                    <p style="text-align:center; color:#666; font-style:italic; padding:15px 15px 5px 15px;">Aucun onglet d'emplacement trouvé.</p>
+                    ${htmlPremierOngletAdmin}
+                `;
+                return;
+            }
+
+            if (!catNiveau2KeyActive || !niveau2List.some(c => c.key === catNiveau2KeyActive || c.id === catNiveau2KeyActive)) {
+                catNiveau2KeyActive = niveau2List[0].key;
+            }
+
+            const indexActuel = niveau2List.findIndex(c => c.key === catNiveau2KeyActive || c.id === catNiveau2KeyActive);
+            const catActuelle = niveau2List[indexActuel];
+            const estPremier = indexActuel <= 0;
+            const estDernier = indexActuel >= niveau2List.length - 1;
+
+            const idsCatActuelle = [catActuelle.id, catActuelle.key].filter(Boolean);
+            const idCibleOnglet = catActuelle.id || catActuelle.key;
+            const nomOngletEchappe = (catActuelle.nom || "onglet").replace(/'/g, "\\'");
+
+            let htmlNiveau2 = '<div class="emplacements-bar">';
+            niveau2List.forEach(cat => {
+                const isSelected = (cat.key === catActuelle.key);
+                htmlNiveau2 += `<button class="emplacement-btn ${isSelected ? 'active' : ''}" onclick="afficherOngletMateriel('${enginId}', '${cat.key}')">${cat.nom || 'Sans nom'}</button>`;
+            });
+            htmlNiveau2 += '</div>';
+
+            const htmlSupprOnglet = estAdmin()
+                ? `
+                    <div class="onglet-actions-admin">
+                        <button type="button" class="btn-fleche-onglet" ${estPremier ? 'disabled' : ''} onclick="deplacerOnglet('${enginId}', '${catActuelle.key}', -1)" title="Déplacer à gauche">←</button>
+                        <button type="button" class="btn-fleche-onglet" ${estDernier ? 'disabled' : ''} onclick="deplacerOnglet('${enginId}', '${catActuelle.key}', 1)" title="Déplacer à droite">→</button>
+                        <span onclick="supprimerCategorie('${enginId}', '${catActuelle.key}', true)">Suppr. onglet "${catActuelle.nom || ''}"</span>
+                    </div>
+                `
+                : '';
+
+            const catImgSrc = formaterImageSrc(catActuelle.imageUri);
+            const htmlPhotoCat = catImgSrc
+                ? `<div class="categorie-photo-box"><img class="categorie-photo" src="${catImgSrc}" alt="${catActuelle.nom || 'Photo onglet'}" onerror="this.parentElement.style.display='none'"></div>`
+                : '';
+
+            let htmlMaterielLibre = '';
+            const entreesMateriels = materielsEngin
+                ? Object.entries(materielsEngin).filter(([, v]) => Boolean(v))
+                : [];
+
+            const itemsLibres = entreesMateriels.filter(([, item]) => idsCatActuelle.includes(item.categorieId));
+            if (itemsLibres.length > 0) {
+                itemsLibres.forEach(([matKey, item]) => {
+                    htmlMaterielLibre += genererCarteMateriel(enginId, matKey, item, catActuelle.key);
+                });
+            }
+
+            const enfantsNiveau3 = toutesCats.filter(c => c.parentId && idsCatActuelle.includes(c.parentId));
+            let htmlTuilesNiveau3 = '';
+
+            if (enfantsNiveau3.length > 0) {
+                enfantsNiveau3.forEach((enfant, index) => {
+                    const idsEnfant = [enfant.id, enfant.key].filter(Boolean);
+                    const idCibleTuile = enfant.id || enfant.key;
+                    const nomTuileEchappe = (enfant.nom || "pochette").replace(/'/g, "\\'");
+                    const itemsEnfant = entreesMateriels.filter(([, item]) => idsEnfant.includes(item.categorieId));
+                    const tuileId = `tuile-${enginId}-${index}`;
+
+                    const boutonsAdminTuile = estAdmin()
+                        ? `
+                            <button type="button" class="btn-ajout-tuile" onclick="event.stopPropagation(); ajouterMateriel('${enginId}', '${idCibleTuile}', '${nomTuileEchappe}', '${catActuelle.key}')">+ Matériel</button>
+                            <button type="button" class="btn-suppr-tuile" onclick="event.stopPropagation(); supprimerCategorie('${enginId}', '${enfant.key}', false)">Suppr.</button>
+                        `
+                        : '';
+
+                    let contenuTuileHtml = '';
+                    if (itemsEnfant.length > 0) {
+                        itemsEnfant.forEach(([matKey, it]) => {
+                            contenuTuileHtml += genererCarteMateriel(enginId, matKey, it, catActuelle.key);
+                        });
+                    } else {
+                        contenuTuileHtml = `<p style="font-size:13px; color:#666; font-style:italic; margin:0;">Aucun matériel dans cette pochette.</p>`;
+                    }
+
+                    htmlTuilesNiveau3 += `
+                        <div class="tuile-depliante">
+                            <div class="tuile-header" onclick="basculerTuile('${tuileId}', 'fleche-${tuileId}')">
+                                <div>
+                                    <span id="fleche-${tuileId}" class="tuile-fleche">▶</span>
+                                    <span>${enfant.nom || 'Pochette'}</span>
+                                </div>
+                                <div class="tuile-right">
+                                    <span class="tuile-count">${itemsEnfant.length} élém.</span>
+                                    ${boutonsAdminTuile}
+                                </div>
+                            </div>
+                            <div id="${tuileId}" class="tuile-body">
+                                ${contenuTuileHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (!htmlMaterielLibre && !htmlTuilesNiveau3) {
+                htmlMaterielLibre = `<p style="text-align:center; color:#666; font-style:italic; padding:15px;">Aucun matériel ni pochette dans "${catActuelle.nom || 'cet emplacement'}".</p>`;
+            }
+
+            const htmlToolbarAdmin = estAdmin()
+                ? `
+                    <div class="materiel-toolbar">
+                        <span onclick="ajouterCategorie('${enginId}', '', '${catActuelle.key}')">+ Nouvel Onglet</span>
+                        <span onclick="ajouterCategorie('${enginId}', '${idCibleOnglet}', '${catActuelle.key}')">+ Pochette dépliable</span>
+                        <span onclick="declencherAjoutPhotoCategorie('${enginId}', '${catActuelle.key}')">+ Photo</span>
+                    </div>
+                    <button class="btn-ajout-materiel" onclick="ajouterMateriel('${enginId}', '${idCibleOnglet}', '${nomOngletEchappe}', '${catActuelle.key}')">+ Ajouter un matériel dans "${catActuelle.nom || ''}"</button>
+                `
+                : `<p style="font-size:12px; color:#64748b; text-align:center; margin-top:12px;">Mode Utilisateur : remarques et dates de péremption modifiables.</p>`;
+
+            document.getElementById("contenu-onglet-materiel").innerHTML = `
+                ${htmlNiveau2}
+                ${htmlSupprOnglet}
+                ${htmlPhotoCat}
+                ${htmlMaterielLibre}
+                ${htmlTuilesNiveau3}
+                ${htmlToolbarAdmin}
+            `;
+        };
+
+        window.basculerTuile = function(bodyId, flecheId) {
+            const bodyEl = document.getElementById(bodyId);
+            const flecheEl = document.getElementById(flecheId);
+            if (bodyEl) bodyEl.classList.toggle("ouverte");
+            if (flecheEl) flecheEl.classList.toggle("ouverte");
+        };
+
+        window.alerteAction = function(action) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+            alert("Action : " + action);
+        };
+
+        window.afficherDetailEngin = function(id) {
+            let engin = tousLesEngins[id];
+            if (!engin) return;
+
+            document.getElementById("vue-liste").style.display = "none";
+            document.getElementById("vue-secondaire").style.display = "block";
+
+            const htmlPointsMeca = genererHtmlPointsMeca(id);
+            const imgSrc = formaterImageSrc(engin.imageUri);
+            const photoHtml = imgSrc
+                ? `<img class="fiche-photo" src="${imgSrc}" alt="${engin.nom || 'Engin'}" onerror="this.style.display='none'">`
+                : '';
+
+            document.getElementById("contenu-secondaire").innerHTML = `
+                <div class="fiche-detail">
+                    <div class="fiche-header">
+                        ${photoHtml}
+                        <div>
+                            <h2 style="margin:0 0 6px 0;">${engin.nom || 'Engin'}</h2>
+                            <p class="immat">Immatriculation : ${engin.immatriculation || 'Non renseignée'}</p>
+                            <p id="verif-engin-detail" class="verif">Dernière vérif : ${engin.derniereVerif || 'Aucune'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="sub-tabs">
+                        <button id="btn-tab-mecanique" class="sub-tab-btn active-meca" onclick="changerSousOnglet('mecanique')">⚙️ Mécanique</button>
+                        <button id="btn-tab-materiel" class="sub-tab-btn" onclick="changerSousOnglet('materiel')">🔧 Matériel</button>
+                    </div>
+
+                    <div id="contenu-mecanique" class="section-form">
+                        <div id="bloc-points-meca">${htmlPointsMeca}</div>
+                        <label class="titre-remarque" for="txt-mecanique">Anomalies / Remarques Mécanique :</label>
+                        <textarea id="txt-mecanique" placeholder="Saisir une anomalie mécanique...">${engin.remarqueMecanique || ''}</textarea>
+                        <button class="btn-sauver" onclick="validerVerification('${id}')">Valider & Enregistrer Mécanique</button>
+                    </div>
+
+                    <div id="contenu-materiel" class="section-form" style="display: none;">
+                        <div id="contenu-onglet-materiel"></div>
+                        <label class="titre-remarque" for="txt-materiel" style="margin-top:20px;">Remarques Matériel Globales :</label>
+                        <textarea id="txt-materiel" placeholder="Saisir une remarque matériel...">${engin.remarqueMateriel || ''}</textarea>
+                        <button class="btn-sauver" onclick="validerVerification('${id}')">Valider & Enregistrer Matériel</button>
+                    </div>
+                </div>
+            `;
+
+            afficherOngletMateriel(id);
+        };
+
+        window.changerSousOnglet = function(type) {
+            const btnMeca = document.getElementById("btn-tab-mecanique");
+            const btnMat = document.getElementById("btn-tab-materiel");
+            const divMeca = document.getElementById("contenu-mecanique");
+            const divMat = document.getElementById("contenu-materiel");
+
+            if (type === 'mecanique') {
+                divMeca.style.display = "block";
+                divMat.style.display = "none";
+                btnMeca.className = "sub-tab-btn active-meca";
+                btnMat.className = "sub-tab-btn";
+            } else {
+                divMeca.style.display = "none";
+                divMat.style.display = "block";
+                btnMeca.className = "sub-tab-btn";
+                btnMat.className = "sub-tab-btn active-mat";
+            }
+        };
+
+        window.validerVerification = async function(id) {
+            const remarqueMeca = document.getElementById("txt-mecanique")?.value ?? "";
+            const remarqueMat = document.getElementById("txt-materiel")?.value ?? "";
+            const dateStr = obtenirDateActuelle();
+            const auteur = profilActif ? profilActif.nom : "Utilisateur";
+            const nouvelleVerif = `${dateStr} par ${auteur}`;
+
+            const misesAJourEngin = {
+                remarqueMecanique: remarqueMeca,
+                remarqueMateriel: remarqueMat,
+                derniereVerif: nouvelleVerif
+            };
+
+            const misesAJourPoints = {};
+            const pointsEngin = tousLesPointsMeca[id];
+            if (pointsEngin) {
+                for (let pointId in pointsEngin) {
+                    if (!pointsEngin[pointId]) continue;
+                    misesAJourPoints[`${pointId}/estValide`] = false;
+                    misesAJourPoints[`${pointId}/dateDerniereCoche`] = dateStr;
+                }
+            }
+
+            try {
+                const promesses = [update(ref(db, `engins/${id}`), misesAJourEngin)];
+                if (Object.keys(misesAJourPoints).length > 0) {
+                    promesses.push(update(ref(db, `points_meca/${id}`), misesAJourPoints));
+                }
+                await Promise.all(promesses);
+
+                if (!tousLesEngins[id]) tousLesEngins[id] = {};
+                tousLesEngins[id].remarqueMecanique = remarqueMeca;
+                tousLesEngins[id].remarqueMateriel = remarqueMat;
+                tousLesEngins[id].derniereVerif = nouvelleVerif;
+
+                if (pointsEngin) {
+                    for (let pointId in pointsEngin) {
+                        if (!pointsEngin[pointId]) continue;
+                        pointsEngin[pointId].estValide = false;
+                        pointsEngin[pointId].dateDerniereCoche = dateStr;
+                    }
+                }
+
+                const verifEl = document.getElementById("verif-engin-detail");
+                if (verifEl) {
+                    verifEl.textContent = `Dernière vérif : ${nouvelleVerif}`;
+                }
+
+                const blocPoints = document.getElementById("bloc-points-meca");
+                if (blocPoints) {
+                    blocPoints.innerHTML = genererHtmlPointsMeca(id);
+                }
+
+                alert(`Vérification validée (${nouvelleVerif}) : cases mécaniques décochées et remarques enregistrées !`);
+            } catch (error) {
+                console.error("Erreur lors de la validation :", error);
+                alert("Erreur lors de l'enregistrement de la vérification.");
+            }
+        };
+
+        function afficherSyntheseAnomalies() {
+            document.getElementById("vue-liste").style.display = "none";
+            document.getElementById("vue-secondaire").style.display = "block";
+
+            let htmlSynthese = "<h2>Synthèse des Anomalies</h2>";
+            let hasAnomalies = false;
+
+            for (let id in tousLesEngins) {
+                let engin = tousLesEngins[id];
+                if (!engin) continue;
+
+                let aMat = engin.remarqueMateriel && engin.remarqueMateriel.trim() !== "";
+                let aMeca = engin.remarqueMecanique && engin.remarqueMecanique.trim() !== "";
+
+                if (aMat || aMeca) {
+                    hasAnomalies = true;
+                    let htmlMeca = aMeca ? `<div class="section-bloc section-meca"><h4>⚙️ Mécanique :</h4><p>${engin.remarqueMecanique}</p></div>` : '';
+                    let htmlMat = aMat ? `<div class="section-bloc"><h4>🔧 Matériel :</h4><p>${engin.remarqueMateriel}</p></div>` : '';
+
+                    htmlSynthese += `
+                        <div class="fiche-detail" style="margin-bottom: 15px;">
+                            <h3>${engin.nom || 'Engin'} (${engin.immatriculation || 'Sans immat'})</h3>
+                            ${htmlMeca}
+                            ${htmlMat}
+                        </div>
+                    `;
+                }
+            }
+
+            if (!hasAnomalies) {
+                htmlSynthese += `<div class="aucune-anomalie">✅ Aucune anomalie matériel ou mécanique signalée sur la flotte.</div>`;
+            }
+
+            document.getElementById("contenu-secondaire").innerHTML = htmlSynthese;
+        }
+
+        document.getElementById("btn-ouvrir-synthese").addEventListener("click", afficherSyntheseAnomalies);
+        document.getElementById("btn-retour").addEventListener("click", () => {
+            document.getElementById("vue-secondaire").style.display = "none";
+            document.getElementById("vue-liste").style.display = "block";
+            chargerDonnees();
+        });
+
+        chargerLogoCs();
+        chargerProfils();
+    </script>
+</body>
+</html>
