@@ -1118,6 +1118,48 @@
             }
         };
 
+        window.modifierMateriel = async function(enginId, matKey, catOngletActiveKey) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+
+            const item = tousLesMateriels[enginId]?.[matKey];
+            if (!item) return;
+
+            const nomSaisi = prompt("Nom du matériel :", item.nom || "");
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim();
+            if (!nom) {
+                alert("Le nom du matériel est obligatoire.");
+                return;
+            }
+
+            const qteSaisie = prompt("Quantité requise :", item.quantite !== undefined ? String(item.quantite) : "1");
+            if (qteSaisie === null) return;
+            const quantite = Number(qteSaisie) || 1;
+
+            const peremptionSaisie = prompt("Date de péremption (ou N/A) :", item.peremption || "N/A");
+            if (peremptionSaisie === null) return;
+            const peremption = peremptionSaisie.trim() || "N/A";
+
+            const refSaisie = prompt("Référence (ou N/A) :", item.reference || "N/A");
+            if (refSaisie === null) return;
+            const reference = refSaisie.trim() || "N/A";
+
+            const maj = { nom, quantite, peremption, reference };
+
+            try {
+                await update(ref(db, `materiels/${enginId}/${matKey}`), maj);
+                tousLesMateriels[enginId][matKey] = { ...item, ...maj };
+                afficherOngletMateriel(enginId, catOngletActiveKey);
+                alert(`"${nom}" mis à jour !`);
+            } catch (e) {
+                console.error("Erreur modification matériel :", e);
+                alert("Erreur lors de la modification du matériel dans Firebase.");
+            }
+        };
+
         window.modifierDatePeremption = async function(enginId, matId, catKey) {
             const item = tousLesMateriels[enginId]?.[matId];
             if (!item) return;
@@ -1292,7 +1334,7 @@
 
         function genererCarteMateriel(enginId, matKey, item, catKey) {
             const adminActions = estAdmin()
-                ? `<span onclick="alerteAction('Modifier matériel')">Modifier</span><span onclick="supprimerMateriel('${enginId}', '${matKey}', '${catKey}')">Suppr.</span>`
+                ? `<span onclick="modifierMateriel('${enginId}', '${matKey}', '${catKey}')">Modifier</span><span onclick="supprimerMateriel('${enginId}', '${matKey}', '${catKey}')">Suppr.</span>`
                 : '';
 
             return `
@@ -1310,47 +1352,6 @@
                 </div>
             `;
         }
-		window.modifierMateriel = async function(enginId, matKey, catOngletActiveKey) {
-            if (!estAdmin()) {
-                alert("Action réservée au profil ADMIN.");
-                return;
-            }
-
-            const item = tousLesMateriels[enginId]?.[matKey];
-            if (!item) return;
-
-            const nomSaisi = prompt("Nom du matériel :", item.nom || "");
-            if (nomSaisi === null) return;
-            const nom = nomSaisi.trim();
-            if (!nom) {
-                alert("Le nom du matériel est obligatoire.");
-                return;
-            }
-
-            const qteSaisie = prompt("Quantité requise :", item.quantite !== undefined ? String(item.quantite) : "1");
-            if (qteSaisie === null) return;
-            const quantite = Number(qteSaisie) || 1;
-
-            const peremptionSaisie = prompt("Date de péremption (ou N/A) :", item.peremption || "N/A");
-            if (peremptionSaisie === null) return;
-            const peremption = peremptionSaisie.trim() || "N/A";
-
-            const refSaisie = prompt("Référence (ou N/A) :", item.reference || "N/A");
-            if (refSaisie === null) return;
-            const reference = refSaisie.trim() || "N/A";
-
-            const maj = { nom, quantite, peremption, reference };
-
-            try {
-                await update(ref(db, `materiels/${enginId}/${matKey}`), maj);
-                tousLesMateriels[enginId][matKey] = { ...item, ...maj };
-                afficherOngletMateriel(enginId, catOngletActiveKey);
-                alert(`"${nom}" mis à jour !`);
-            } catch (e) {
-                console.error("Erreur modification matériel :", e);
-                alert("Erreur lors de la modification du matériel dans Firebase.");
-            }
-        };
 		
         window.afficherOngletMateriel = function(enginId, catNiveau2KeyActive = null) {
             const catsEngin = toutesLesCategories[enginId];
