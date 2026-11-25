@@ -396,7 +396,6 @@
             document.getElementById("vue-connexion").style.display = "block";
         }
 
-        // Gestion des profils (ADMIN uniquement)
         window.afficherGestionProfils = async function() {
             if (!estAdmin()) {
                 alert("Action réservée au profil ADMIN.");
@@ -404,6 +403,7 @@
             }
             document.getElementById("vue-liste").style.display = "none";
             document.getElementById("vue-secondaire").style.display = "block";
+            document.getElementById("contenu-secondaire").innerHTML = `<div class="fiche-detail"><p>Chargement des profils...</p></div>`;
 
             await chargerProfils();
 
