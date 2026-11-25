@@ -979,6 +979,35 @@
                 alert("Erreur lors de l'enregistrement dans Firebase.");
             }
         };
+		
+		window.modifierCategorie = async function(enginId, catKey, catOngletActiveKey) {
+            if (!estAdmin()) {
+                alert("Action réservée au profil ADMIN.");
+                return;
+            }
+
+            const catsEngin = toutesLesCategories[enginId] || {};
+            const catCible = catsEngin[catKey];
+            if (!catCible) return;
+
+            const nomSaisi = prompt("Nouveau nom de la pochette dépliable :", catCible.nom || "");
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim();
+            if (!nom) {
+                alert("Le nom ne peut pas être vide.");
+                return;
+            }
+
+            try {
+                await update(ref(db, `categories/${enginId}/${catKey}`), { nom });
+                toutesLesCategories[enginId][catKey].nom = nom;
+                afficherOngletMateriel(enginId, catOngletActiveKey);
+                alert(`Pochette renommée en "${nom}" !`);
+            } catch (e) {
+                console.error("Erreur modification catégorie :", e);
+                alert("Erreur lors de la modification dans Firebase.");
+            }
+        };
 
         window.supprimerCategorie = async function(enginId, catKey, estOngletNiveau2) {
             if (!estAdmin()) {
@@ -1453,6 +1482,7 @@
                     const boutonsAdminTuile = estAdmin()
                         ? `
                             <button type="button" class="btn-ajout-tuile" onclick="event.stopPropagation(); ajouterMateriel('${enginId}', '${idCibleTuile}', '${nomTuileEchappe}', '${catActuelle.key}')">+ Matériel</button>
+                            <button type="button" class="btn-fleche-onglet" onclick="event.stopPropagation(); modifierCategorie('${enginId}', '${enfant.key}', '${catActuelle.key}')">Modif.</button>
                             <button type="button" class="btn-suppr-tuile" onclick="event.stopPropagation(); supprimerCategorie('${enginId}', '${enfant.key}', false)">Suppr.</button>
                         `
                         : '';
