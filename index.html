@@ -990,7 +990,10 @@
             const catCible = catsEngin[catKey];
             if (!catCible) return;
 
-            const nomSaisi = prompt("Nouveau nom de la pochette dépliable :", catCible.nom || "");
+            const estPochette = Boolean(catCible.parentId && catCible.parentId.trim() !== "");
+            const libelle = estPochette ? "de la pochette dépliable" : "de l'onglet";
+
+            const nomSaisi = prompt(`Nouveau nom ${libelle} :`, catCible.nom || "");
             if (nomSaisi === null) return;
             const nom = nomSaisi.trim();
             if (!nom) {
@@ -1002,7 +1005,7 @@
                 await update(ref(db, `categories/${enginId}/${catKey}`), { nom });
                 toutesLesCategories[enginId][catKey].nom = nom;
                 afficherOngletMateriel(enginId, catOngletActiveKey);
-                alert(`Pochette renommée en "${nom}" !`);
+                alert(estPochette ? `Pochette renommée en "${nom}" !` : `Onglet renommé en "${nom}" !`);
             } catch (e) {
                 console.error("Erreur modification catégorie :", e);
                 alert("Erreur lors de la modification dans Firebase.");
@@ -1446,6 +1449,7 @@
                     <div class="onglet-actions-admin">
                         <button type="button" class="btn-fleche-onglet" ${estPremier ? 'disabled' : ''} onclick="deplacerOnglet('${enginId}', '${catActuelle.key}', -1)" title="Déplacer à gauche">←</button>
                         <button type="button" class="btn-fleche-onglet" ${estDernier ? 'disabled' : ''} onclick="deplacerOnglet('${enginId}', '${catActuelle.key}', 1)" title="Déplacer à droite">→</button>
+                        <span onclick="modifierCategorie('${enginId}', '${catActuelle.key}', '${catActuelle.key}')">Modif. onglet "${catActuelle.nom || ''}"</span>
                         <span onclick="supprimerCategorie('${enginId}', '${catActuelle.key}', true)">Suppr. onglet "${catActuelle.nom || ''}"</span>
                     </div>
                 `
