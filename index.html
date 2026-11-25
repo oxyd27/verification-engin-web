@@ -446,13 +446,18 @@
                 alert("Action réservée au profil ADMIN.");
                 return;
             }
-            const nomSaisi = prompt("Identifiant / Nom du profil :");
-            if (nomSaisi === null) return;
-            const nom = nomSaisi.trim();
-            if (!nom) {
+
+            const identifiantSaisi = prompt("Identifiant de connexion (ex. f.mercier) :");
+            if (identifiantSaisi === null) return;
+            const idPropre = identifiantSaisi.trim().replace(/[.#$[\]]/g, "_");
+            if (!idPropre) {
                 alert("L'identifiant est obligatoire.");
                 return;
             }
+
+            const nomSaisi = prompt("Nom affiché (ex. Lieutenant Mercier) :", idPropre);
+            if (nomSaisi === null) return;
+            const nom = nomSaisi.trim() || idPropre;
 
             const mdpSaisi = prompt("Mot de passe :");
             if (mdpSaisi === null) return;
@@ -467,16 +472,18 @@
             const role = roleSaisi.trim().toUpperCase() === "ADMIN" ? "ADMIN" : "USER";
 
             try {
-                const listeRef = ref(db, "profils");
-                const nouvelleRef = push(listeRef);
-                await set(nouvelleRef, {
-                    id: nouvelleRef.key,
+                const cleExistante = await get(ref(db, `profils/${idPropre}`));
+                const cibleRef = cleExistante.exists() ? push(ref(db, "profils")) : ref(db, `profils/${idPropre}`);
+                const idFinal = cleExistante.exists() ? `${idPropre}_${cibleRef.key.slice(-4)}` : idPropre;
+
+                await set(cibleRef, {
+                    id: idFinal,
                     nom,
                     motDePasse,
                     role
                 });
                 await afficherGestionProfils();
-                alert(`Profil "${nom}" créé (${role}).`);
+                alert(`Profil "${nom}" créé (identifiant : ${idFinal}, rôle : ${role}).`);
             } catch (e) {
                 console.error("Erreur création profil :", e);
                 alert("Erreur lors de la création du profil.");
